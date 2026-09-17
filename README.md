@@ -20,10 +20,12 @@ your own flood map, DTM and uncertainty rasters.
 FLEXTH.py                 FLEXTH with the uncertainty gate (the model)
 flexth_batch_main.py      aligns inputs, runs one FLEXTH job per case
 flexth_post_analysis.py   compares runs with/without the gate
+DTM_2_floodmap.py         (upstream) aligns one raster to the flood map grid; needs GDAL
 configs/
   example.legacy_gate.json    gate from uncertainty.tif only
   example.semantic_gate.json  gate from classification + probability + uncertainty
 docs/                     gate, inputs and parameter documentation
+test_case/                link to the upstream FLEXTH test data
 ```
 
 ## Installation
@@ -167,6 +169,20 @@ parameters at the top of the file, then run `python FLEXTH.py`. In this mode
 there is no raster alignment, so all inputs must already share the flood map's
 grid. Note that the standalone default is `uncertainty_gate_mode =
 "semantic_high_uncertainty"`.
+
+To align a raster to the flood map, use the upstream helper `DTM_2_floodmap.py`.
+Set `input_raster`, `output_raster`, `input_flood_delineation` and
+`continuous_input` at the top of the file, and run it once per raster. It uses
+GDAL's Python bindings, which are not part of the default environment. Install
+them with `mamba install -c conda-forge gdal`.
+
+## Upstream test case
+
+[test_case/INSTRUCTIONS.txt](test_case/INSTRUCTIONS.txt) links to the original
+FLEXTH test data (Kakhovka dam 2023, Greece 2023, Odra river 2024). These cases
+include a flood map and a DTM but **no uncertainty raster**. They are useful for
+checking that FLEXTH runs in your environment: run `FLEXTH.py` directly with
+`uncertainty_on = 0`. To try the gate, you need your own uncertainty map.
 
 ## Known limitations
 

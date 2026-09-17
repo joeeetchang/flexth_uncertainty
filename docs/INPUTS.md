@@ -54,7 +54,10 @@ words, e.g. avoid `flood_dtm.tif`.
 
 **Running `FLEXTH.py` directly.** No alignment is done. Every raster must share
 the flood map's CRS, transform and shape exactly, otherwise FLEXTH raises
-`TypeError: ... don't share the same projections and/or grid`.
+`TypeError: ... don't share the same projections and/or grid`. Use
+`DTM_2_floodmap.py` (requires GDAL) to align rasters beforehand. Note that it
+uses `mode` resampling for categorical rasters, while the batch runner uses
+nearest-neighbour.
 
 ## Uncertainty from other models
 

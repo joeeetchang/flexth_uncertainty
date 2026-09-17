@@ -11,3 +11,5 @@ dependencies:
   - matplotlib-base>=3.10
   - imageio>=2.37
   - py-opencv>=4.13
+  # optional, only for DTM_2_floodmap.py:
+  # - gdal

@@ -1,0 +1,44 @@
+Input (and output) data to run the test cases are available at:
+
+https://drive.google.com/drive/folders/1LHqOViHZrV2UnvARJXq-uz09JD0zPZJ0?usp=sharing
+
+
+_____________________________________________________________________________________
+
+
+
+Wherever you like create two folders named "input" and "output"
+
+
+
+Compulsory rasters that must be in the input folder: 
+
+-DTM (dtm.tif)
+-flood delineation  (flood.tif)
+
+
+
+Optional rasters:
+
+- exclusion mask   (exclusion.tif)
+- water bodies     (permanent_water.tif)
+- observed water:  flood water + permanent water bodies (obswater.tif)
+
+NOTE: permanent_water.tif   and   obswater.tif   are exclusive, meaning you should have either one or the other. 
+
+
+
+In the script FLEXTH.py assign the appropriate paths to the Input/Output folders
+
+Adjust the mode parameters if you want. 
+See Betterle & Salamon (2024) on NHESS for details (https://doi.org/10.5194/nhess-24-2817-2024). 
+
+
+Run the script. 
+
+The geotiff raster with estimated water depths (in cm) and water level (in m) will be created in the Output folder.
+
+Open with a GIS and possibly adjust the limits of the displayed  values (e.g. between 0 and 200 cm for the water depth). 
+Permanent water bodies (if provided) will be displayed with a dummy 9999 water depth.
+
+
