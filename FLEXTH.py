@@ -137,7 +137,6 @@ uncertainty_on = 1
 # UNCERTAINTY-FLEXTH CHANGE U1: use EDL class/probability semantics; set
 # "legacy_low_uncertainty" to reproduce the earlier unc < threshold gate.
 uncertainty_gate_mode = "semantic_high_uncertainty"
-water_probability_threshold = 0.5
 
 
 # WATER LEVEL ESTIMATION METHOD (options: 'method_A', 'method_B'): 
@@ -351,38 +350,29 @@ def build_semantic_candidate_mask(
     water_probability,
     uncertainty,
     threshold,
-    probability_threshold,
 ):
     """Return pixels where optical semantics allow terrain-based propagation."""
-    finite_probability = np.isfinite(water_probability)
     invalid = (
         (classification == 0)
-        | (~finite_probability)
+        | (~np.isfinite(water_probability))
         | (water_probability < 0)
     )
+    # Cloud (class 3) is unobserved like invalid data: the water head was not
+    # trained under bright clouds, so its uncertainty there is not used.
+    cloud = classification == 3
     high_uncertainty = (
         np.isfinite(uncertainty)
         & (uncertainty >= 0)
         & (uncertainty >= threshold)
     )
     uncertain_land = (classification == 1) & high_uncertainty
-    cloud_candidate = (
-        (classification == 3)
-        & (
-            high_uncertainty
-            | (
-                finite_probability
-                & (water_probability >= probability_threshold)
-            )
-        )
-    )
     # Class 4 was first predicted as water (p_water > 0.5), then relabeled
     # flood_trace by MNDWI. It is terrain-eligible but is not an initial seed.
     flood_trace_candidate = classification == 4
     return (
         invalid
+        | cloud
         | uncertain_land
-        | cloud_candidate
         | flood_trace_candidate
     )
 
@@ -488,7 +478,6 @@ def flood_processing(
             water_probability,
             uncertainty,
             uncertainty_threshold,
-            water_probability_threshold,
         )
 
     #CHECKS IF OPTIONAL INPUTS ARE PROVIDED AND IMPORT THEM

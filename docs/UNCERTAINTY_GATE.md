@@ -47,15 +47,16 @@ only if its uncertainty is at or above the threshold.**
 high_unc = isfinite(uncertainty) AND uncertainty >= 0 AND uncertainty >= threshold
 invalid  = class == 0  OR  water_probability not finite  OR  water_probability < 0
 
-gate = invalid
-    OR (class == 1 AND high_unc)                                          # uncertain land
-    OR (class == 3 AND (high_unc OR water_probability >= p_threshold))    # cloud, see caveat
-    OR (class == 4)                                                       # flood trace
+gate = invalid                    # no observation
+    OR (class == 3)               # cloud: unobserved, treated like invalid
+    OR (class == 1 AND high_unc)  # uncertain land
+    OR (class == 4)               # flood trace
 ```
 
-`p_threshold` is `water_probability_threshold` (default `0.5`). Confident land
-(`class == 1` with low uncertainty) and water (`class == 2`) are never
-propagation candidates. Class 2 pixels are already flood seeds.
+Invalid and cloud pixels carry no optical information about the surface, so
+terrain alone decides. Confident land (`class == 1` with low uncertainty) and
+water (`class == 2`) are never propagation candidates. Class 2 pixels are
+already flood seeds. The threshold therefore only affects land pixels.
 
 Inputs: `uncertainty.tif`, `classification.tif`, `water_probability.tif`
 (see [INPUTS.md](INPUTS.md) for the class codes).
@@ -64,10 +65,11 @@ This mode also filters pixels that FLEXTH's own preprocessing (morphological
 closing and gap filling) adds to the flood map. Such additions are kept only if
 they pass the gate. Original `flood.tif` pixels are always kept.
 
-#### Caveat: the cloud rule
+#### Why cloud is not gated by uncertainty
 
-The cloud rule (`class == 3`) uses the **water head's** uncertainty and
-probability. In the EDL model these values are not reliable under clouds:
+Earlier versions opened a cloud pixel only if its uncertainty was high or its
+water probability was at least 0.5. Those values come from the water head,
+which is not reliable under clouds:
 
 - **Not supervised.** WorldFloods marks bright cloud pixels as invalid in the
   land/water training target, so they are excluded from the water-head loss.
@@ -78,14 +80,11 @@ probability. In the EDL model these values are not reliable under clouds:
 - **Overconfident in practice.** On nine WorldFloods test events, the median
   uncertainty under cloud (0.065) was about the same as over land (0.064),
   even though the sensor cannot see the surface.
-- **Hard to validate.** For those events, 90% of class 3 pixels have no
-  valid land/water label, so the effect of the rule cannot be evaluated against
-  ground truth.
 
-Treat the current cloud rule as a heuristic. Two alternatives follow from
-optical data carrying no surface information under cloud: treat cloud like
-invalid data (always a candidate, so terrain decides, as in the original FLEXTH
-use of exclusion masks) or block it. Neither is implemented as an option yet.
+Cloud is therefore treated as unobserved, like invalid pixels. This matches how
+the original FLEXTH uses exclusion masks for areas without observation. Note
+that ground truth cannot validate this choice well: on the same nine events,
+90% of class 3 pixels have no valid land/water label.
 
 ### `legacy_low_uncertainty`
 
@@ -121,8 +120,8 @@ The same level means different things in each mode:
 
 | Level | `semantic_high_uncertainty` | `legacy_low_uncertainty` |
 |-------|-----------------------------|--------------------------|
-| 90 (high threshold) | only the ~10% most uncertain pixels count as high-uncertainty → **most restrictive** | ~90% of pixels pass → **most permissive** |
-| 60 (low threshold)  | ~40% of pixels count as high-uncertainty → **most permissive** | ~60% of pixels pass → **most restrictive** |
+| 90 (high threshold) | only land pixels above the 90th-percentile uncertainty open → **most restrictive** | ~90% of pixels pass → **most permissive** |
+| 60 (low threshold)  | land pixels above the 60th-percentile uncertainty open → **most permissive** | ~60% of pixels pass → **most restrictive** |
 
 ### Computing thresholds for your own uncertainty map
 
@@ -154,13 +153,11 @@ Every modification in `FLEXTH.py` is tagged `UNCERTAINTY-FLEXTH CHANGE`:
 
 | Tag | Purpose |
 |-----|---------|
-| U1 | configuration: `uncertainty_gate_mode`, `water_probability_threshold` |
-| U2 | load and grid-check `classification.tif` and `water_probability.tif`, build the semantic candidate mask |
+| U1 | configuration: `uncertainty_gate_mode` |
+| U2 | load and grid-check `classification.tif` and `water_probability.tif`, build the semantic candidate mask (`build_semantic_candidate_mask()`) |
 | U3 | preprocessing additions must pass the semantic gate |
 | U4 | the gate is combined with the original propagation conditions |
 | U5 | semantic inputs are tiled and passed to each tile when `param_tiling = True` |
-
-The gate function is `build_semantic_candidate_mask()`.
 
 ## Debugging
 

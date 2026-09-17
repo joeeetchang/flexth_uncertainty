@@ -1,5 +1,5 @@
 {
-  "_comment": "Semantic gate: propagation candidates are chosen from the EDL classification, water probability and uncertainty (see docs/UNCERTAINTY_GATE.md). Requires classification.tif and water_probability.tif. retention_curve values were computed for the ML4Floods EDL model; compute your own for other models.",
+  "_comment": "Semantic gate: propagation candidates are chosen from the EDL classification and uncertainty; water_probability marks invalid pixels (see docs/UNCERTAINTY_GATE.md). Requires classification.tif and water_probability.tif. retention_curve values were computed for the ML4Floods EDL model; compute your own for other models.",
   "base_inputs": {
     "flood": "data/my_event/flood.tif",
     "dtm": "data/my_event/dtm.tif",
@@ -15,7 +15,6 @@
   },
   "base_params": {
     "uncertainty_gate_mode": "semantic_high_uncertainty",
-    "water_probability_threshold": 0.5,
     "param_output_map": "WL_WD",
     "param_tiling": false,
     "param_tile_inputs": true,

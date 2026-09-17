@@ -112,7 +112,7 @@ current working directory.
 |-----|---------|
 | `base_inputs` | Paths to input rasters. `flood`, `dtm` and `uncertainty` are always required. The semantic gate (default) also requires `classification` and `water_probability`. Optional: `exclusion`, `permanent_water`, `obswater`. |
 | `retention_curve` | Maps a retention level to an uncertainty threshold. |
-| `base_params` | Parameters shared by all cases. Includes `uncertainty_gate_mode` (`semantic_high_uncertainty` by default, or `legacy_low_uncertainty`), `water_probability_threshold` (semantic gate, default `0.5`), `debug_uncertainty`, and any `param_*` from [docs/PARAMETERS.md](docs/PARAMETERS.md). |
+| `base_params` | Parameters shared by all cases. Includes `uncertainty_gate_mode` (`semantic_high_uncertainty` by default, or `legacy_low_uncertainty`), `debug_uncertainty`, and any `param_*` from [docs/PARAMETERS.md](docs/PARAMETERS.md). |
 | `cases` | Explicit list of runs. Each entry overrides `base_params`. |
 | `sweep` | Alternative to `cases`: a Cartesian product, e.g. `{"uncertainty_on": [0, 1], "param_threshold_slope": [0.1, 0.2]}`. Do not use `sweep` and `cases` together. |
 
@@ -195,9 +195,10 @@ checking that FLEXTH runs in your environment: run `FLEXTH.py` directly with
   (e.g. below sea level) are not counted.
 - Runs execute sequentially. Large rasters can take hours and need a lot of
   memory, so consider `param_tiling`.
-- The semantic gate's rule for cloud pixels relies on water-head outputs that
-  are not supervised under clouds in the EDL model, so treat it as a heuristic
-  ([details](docs/UNCERTAINTY_GATE.md#caveat-the-cloud-rule)).
+- The semantic gate treats cloud pixels as unobserved, so terrain alone decides
+  whether they flood. Under large clouds this can extend flooding far, limited
+  only by FLEXTH's propagation distance and terrain conditions
+  ([why](docs/UNCERTAINTY_GATE.md#why-cloud-is-not-gated-by-uncertainty)).
 - `flood_expansion.gif` is rendered whenever the propagation step runs (up to
   120 frames), which adds time on large rasters.
 

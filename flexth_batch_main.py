@@ -53,7 +53,6 @@ PATCH_PATTERNS = {
     "uncertainty_threshold": r"(?m)^uncertainty_threshold\s*=\s*.*$",
     "uncertainty_on": r"(?m)^uncertainty_on\s*=\s*.*$",
     "uncertainty_gate_mode": r'(?m)^uncertainty_gate_mode\s*=\s*".*?"',
-    "water_probability_threshold": r"(?m)^water_probability_threshold\s*=\s*.*$",
     "param_tiling": r"(?m)^param_tiling\s*=\s*.*$",
     "param_tile_inputs": r"(?m)^param_tile_inputs\s*=\s*.*$",
     "param_tile_size": r"(?m)^param_tile_size\s*=\s*.*$",
@@ -256,7 +255,6 @@ def build_patch_values(
         "uncertainty_threshold": f"uncertainty_threshold = float({repr(float(uncertainty_threshold))})",
         "uncertainty_on": f"uncertainty_on = {int(params.get('uncertainty_on', 1))}",
         "uncertainty_gate_mode": f"uncertainty_gate_mode = {json.dumps(params.get('uncertainty_gate_mode', DEFAULT_GATE_MODE))}",
-        "water_probability_threshold": f"water_probability_threshold = {float(params.get('water_probability_threshold', 0.5))}",
         "param_tiling": f"param_tiling      = {bool(params.get('param_tiling', False))}",
         "param_tile_inputs": f"param_tile_inputs = {bool(params.get('param_tile_inputs', False))}",
         "param_tile_size": f"param_tile_size   = {int(params.get('param_tile_size', 10000))}",
@@ -289,7 +287,6 @@ def resolve_full_params(base_params: dict[str, Any], case_params: dict[str, Any]
     }:
         raise ValueError(f"Unknown uncertainty_gate_mode: {gate_mode!r}")
     params["uncertainty_gate_mode"] = gate_mode
-    params.setdefault("water_probability_threshold", 0.5)
     uncertainty_key = params.get("uncertainty_level")
     if uncertainty_key is None and "uncertainty_threshold" not in params:
         uncertainty_key = 70

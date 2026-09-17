@@ -33,7 +33,7 @@ The semantic gate expects the ML4Floods EDL class convention:
 | 0 | invalid | always a propagation candidate |
 | 1 | land | a candidate only if uncertainty ≥ threshold |
 | 2 | water | not a candidate (it is the flood seed) |
-| 3 | cloud | a candidate if uncertainty ≥ threshold or water probability ≥ `water_probability_threshold` |
+| 3 | cloud | always a candidate (unobserved, like invalid) |
 | 4 | flood trace | always a candidate, but not a seed |
 
 `flood.tif` is normally `classification == 2`. If your classifier uses other
