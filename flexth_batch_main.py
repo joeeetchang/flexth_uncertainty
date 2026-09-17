@@ -22,6 +22,8 @@ else:
     RUNTIME_IMPORT_ERROR = None
 
 
+DEFAULT_GATE_MODE = "semantic_high_uncertainty"
+
 REQUIRED_INPUT_NAMES = {
     "flood": "flood.tif",
     "dtm": "dtm.tif",
@@ -93,10 +95,7 @@ def ensure_required_inputs(
 ) -> None:
     missing = [key for key in REQUIRED_INPUT_NAMES if key not in base_inputs]
     if (
-        base_params.get(
-            "uncertainty_gate_mode",
-            "legacy_low_uncertainty",
-        )
+        base_params.get("uncertainty_gate_mode", DEFAULT_GATE_MODE)
         == "semantic_high_uncertainty"
     ):
         missing.extend(
@@ -256,7 +255,7 @@ def build_patch_values(
         "retention_curve": f"retention_curve = {json.dumps(retention_curve, ensure_ascii=True)}",
         "uncertainty_threshold": f"uncertainty_threshold = float({repr(float(uncertainty_threshold))})",
         "uncertainty_on": f"uncertainty_on = {int(params.get('uncertainty_on', 1))}",
-        "uncertainty_gate_mode": f"uncertainty_gate_mode = {json.dumps(params.get('uncertainty_gate_mode', 'legacy_low_uncertainty'))}",
+        "uncertainty_gate_mode": f"uncertainty_gate_mode = {json.dumps(params.get('uncertainty_gate_mode', DEFAULT_GATE_MODE))}",
         "water_probability_threshold": f"water_probability_threshold = {float(params.get('water_probability_threshold', 0.5))}",
         "param_tiling": f"param_tiling      = {bool(params.get('param_tiling', False))}",
         "param_tile_inputs": f"param_tile_inputs = {bool(params.get('param_tile_inputs', False))}",
@@ -283,10 +282,7 @@ def build_patch_values(
 
 def resolve_full_params(base_params: dict[str, Any], case_params: dict[str, Any], retention_curve: dict[str, float]) -> dict[str, Any]:
     params = {**base_params, **case_params}
-    gate_mode = params.get(
-        "uncertainty_gate_mode",
-        "legacy_low_uncertainty",
-    )
+    gate_mode = params.get("uncertainty_gate_mode", DEFAULT_GATE_MODE)
     if gate_mode not in {
         "legacy_low_uncertainty",
         "semantic_high_uncertainty",

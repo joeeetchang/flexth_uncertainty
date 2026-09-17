@@ -22,8 +22,8 @@ flexth_batch_main.py      aligns inputs, runs one FLEXTH job per case
 flexth_post_analysis.py   compares runs with/without the gate
 DTM_2_floodmap.py         (upstream) aligns one raster to the flood map grid; needs GDAL
 configs/
-  example.legacy_gate.json    gate from uncertainty.tif only
-  example.semantic_gate.json  gate from classification + probability + uncertainty
+  example.semantic_gate.json  recommended: classification + probability + uncertainty
+  example.legacy_gate.json    earlier gate: uncertainty.tif only
 docs/                     gate, inputs and parameter documentation
 test_case/                link to the upstream FLEXTH test data
 ```
@@ -61,16 +61,19 @@ data/my_event/
   flood.tif          1 = flooded
   dtm.tif            ground elevation
   uncertainty.tif    lower = more confident
+  classification.tif      EDL classes (0 invalid, 1 land, 2 water, 3 cloud, 4 flood trace)
+  water_probability.tif   0-1
 ```
 
-For the semantic gate, also add `classification.tif` and `water_probability.tif`.
+The default semantic gate needs all five rasters. If you only have an
+uncertainty map, use the legacy gate (`configs/example.legacy_gate.json`).
 The rasters do not need to share a grid, because the batch runner aligns them
 to `flood.tif`. See [docs/INPUTS.md](docs/INPUTS.md).
 
 **2. Create a config.**
 
 ```bash
-cp configs/example.legacy_gate.json configs/local.my_event.json
+cp configs/example.semantic_gate.json configs/local.my_event.json
 ```
 
 Edit `base_inputs` so it points to your files. Replace the values in
@@ -100,16 +103,16 @@ current working directory.
 {
   "base_inputs":     { "flood": "...", "dtm": "...", "uncertainty": "...", ... },
   "retention_curve": { "90": 0.318, "80": 0.141, "70": 0.089, "60": 0.065 },
-  "base_params":     { "uncertainty_gate_mode": "legacy_low_uncertainty", "param_...": ... },
+  "base_params":     { "uncertainty_gate_mode": "semantic_high_uncertainty", "param_...": ... },
   "cases":           [ { "uncertainty_on": 0 }, { "uncertainty_on": 1, "uncertainty_level": 90 } ]
 }
 ```
 
 | Key | Meaning |
 |-----|---------|
-| `base_inputs` | Paths to input rasters. `flood`, `dtm` and `uncertainty` are always required. The semantic gate also requires `classification` and `water_probability`. Optional: `exclusion`, `permanent_water`, `obswater`. |
+| `base_inputs` | Paths to input rasters. `flood`, `dtm` and `uncertainty` are always required. The semantic gate (default) also requires `classification` and `water_probability`. Optional: `exclusion`, `permanent_water`, `obswater`. |
 | `retention_curve` | Maps a retention level to an uncertainty threshold. |
-| `base_params` | Parameters shared by all cases. Includes `uncertainty_gate_mode` (`legacy_low_uncertainty` by default, so always set it), `water_probability_threshold` (semantic gate, default `0.5`), `debug_uncertainty`, and any `param_*` from [docs/PARAMETERS.md](docs/PARAMETERS.md). |
+| `base_params` | Parameters shared by all cases. Includes `uncertainty_gate_mode` (`semantic_high_uncertainty` by default, or `legacy_low_uncertainty`), `water_probability_threshold` (semantic gate, default `0.5`), `debug_uncertainty`, and any `param_*` from [docs/PARAMETERS.md](docs/PARAMETERS.md). |
 | `cases` | Explicit list of runs. Each entry overrides `base_params`. |
 | `sweep` | Alternative to `cases`: a Cartesian product, e.g. `{"uncertainty_on": [0, 1], "param_threshold_slope": [0.1, 0.2]}`. Do not use `sweep` and `cases` together. |
 
@@ -167,8 +170,7 @@ python flexth_post_analysis.py \
 You can also run `FLEXTH.py` on its own. Edit the input/output paths and
 parameters at the top of the file, then run `python FLEXTH.py`. In this mode
 there is no raster alignment, so all inputs must already share the flood map's
-grid. Note that the standalone default is `uncertainty_gate_mode =
-"semantic_high_uncertainty"`.
+grid.
 
 To align a raster to the flood map, use the upstream helper `DTM_2_floodmap.py`.
 Set `input_raster`, `output_raster`, `input_flood_delineation` and
@@ -193,6 +195,9 @@ checking that FLEXTH runs in your environment: run `FLEXTH.py` directly with
   (e.g. below sea level) are not counted.
 - Runs execute sequentially. Large rasters can take hours and need a lot of
   memory, so consider `param_tiling`.
+- The semantic gate's rule for cloud pixels relies on water-head outputs that
+  are not supervised under clouds in the EDL model, so treat it as a heuristic
+  ([details](docs/UNCERTAINTY_GATE.md#caveat-the-cloud-rule)).
 - `flood_expansion.gif` is rendered whenever the propagation step runs (up to
   120 frames), which adds time on large rasters.
 

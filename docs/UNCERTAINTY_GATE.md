@@ -30,30 +30,18 @@ not change the water depth formula.**
 
 ## Gate modes
 
-Choose the mode with `uncertainty_gate_mode`. The two modes read the same
-threshold in **opposite** directions, so always set the mode explicitly.
+Choose the mode with `uncertainty_gate_mode`. **`semantic_high_uncertainty` is
+the recommended mode and the default** in both `FLEXTH.py` and
+`flexth_batch_main.py`. The two modes read the same threshold in **opposite**
+directions, so do not reuse results or thresholds across modes.
 
-> **Default mismatch:** run standalone, `FLEXTH.py` defaults to
-> `semantic_high_uncertainty`. `flexth_batch_main.py` defaults to
-> `legacy_low_uncertainty` when a config omits the key. Both example configs set
-> it explicitly.
-
-### `legacy_low_uncertainty`
-
-Propagation is allowed only into pixels the model is **confident** about:
-
-```
-gate = isfinite(uncertainty) AND uncertainty < threshold
-```
-
-Inputs: `uncertainty.tif`.
-
-### `semantic_high_uncertainty`
+### `semantic_high_uncertainty` (recommended)
 
 This mode is designed for the ML4Floods EDL model's output. Propagation is
 allowed into pixels where the optical classification is **unreliable or
 water-like**, so terrain can decide. Where the classifier confidently says
-"land", terrain is not allowed to override it.
+"land", terrain is not allowed to override it: **a land pixel may be flooded
+only if its uncertainty is at or above the threshold.**
 
 ```
 high_unc = isfinite(uncertainty) AND uncertainty >= 0 AND uncertainty >= threshold
@@ -61,7 +49,7 @@ invalid  = class == 0  OR  water_probability not finite  OR  water_probability <
 
 gate = invalid
     OR (class == 1 AND high_unc)                                          # uncertain land
-    OR (class == 3 AND (high_unc OR water_probability >= p_threshold))    # cloud
+    OR (class == 3 AND (high_unc OR water_probability >= p_threshold))    # cloud, see caveat
     OR (class == 4)                                                       # flood trace
 ```
 
@@ -75,6 +63,45 @@ Inputs: `uncertainty.tif`, `classification.tif`, `water_probability.tif`
 This mode also filters pixels that FLEXTH's own preprocessing (morphological
 closing and gap filling) adds to the flood map. Such additions are kept only if
 they pass the gate. Original `flood.tif` pixels are always kept.
+
+#### Caveat: the cloud rule
+
+The cloud rule (`class == 3`) uses the **water head's** uncertainty and
+probability. In the EDL model these values are not reliable under clouds:
+
+- **Not supervised.** WorldFloods marks bright cloud pixels as invalid in the
+  land/water training target, so they are excluded from the water-head loss.
+  At inference, class 3 is assigned with the same brightness threshold, so
+  most class 3 pixels fall in that unsupervised region.
+- **Not calibrated.** The retention thresholds are computed on pixels with a
+  valid land/water label, which excludes those clouds.
+- **Overconfident in practice.** On nine WorldFloods test events, the median
+  uncertainty under cloud (0.065) was about the same as over land (0.064),
+  even though the sensor cannot see the surface.
+- **Hard to validate.** For those events, 90% of class 3 pixels have no
+  valid land/water label, so the effect of the rule cannot be evaluated against
+  ground truth.
+
+Treat the current cloud rule as a heuristic. Two alternatives follow from
+optical data carrying no surface information under cloud: treat cloud like
+invalid data (always a candidate, so terrain decides, as in the original FLEXTH
+use of exclusion masks) or block it. Neither is implemented as an option yet.
+
+### `legacy_low_uncertainty`
+
+The earlier gate, kept for comparison and for uncertainty maps without EDL-style
+classes. Propagation is allowed only into pixels the model is **confident**
+about:
+
+```
+gate = isfinite(uncertainty) AND uncertainty < threshold
+```
+
+Inputs: `uncertainty.tif`.
+
+Note that for EDL, low uncertainty means strong evidence for *either* land or
+water, not "likely water". This gate therefore also opens confidently-land
+pixels to terrain-based flooding.
 
 ## Retention levels and thresholds
 
@@ -92,10 +119,10 @@ events. **They are not meaningful for other models or uncertainty scales.**
 
 The same level means different things in each mode:
 
-| Level | `legacy_low_uncertainty` | `semantic_high_uncertainty` |
-|-------|--------------------------|-----------------------------|
-| 90 (high threshold) | ~90% of pixels pass → **most permissive** | few pixels count as high-uncertainty → **most restrictive** |
-| 60 (low threshold)  | ~60% of pixels pass → **most restrictive** | many pixels count as high-uncertainty → **most permissive** |
+| Level | `semantic_high_uncertainty` | `legacy_low_uncertainty` |
+|-------|-----------------------------|--------------------------|
+| 90 (high threshold) | only the ~10% most uncertain pixels count as high-uncertainty → **most restrictive** | ~90% of pixels pass → **most permissive** |
+| 60 (low threshold)  | ~40% of pixels count as high-uncertainty → **most permissive** | ~60% of pixels pass → **most restrictive** |
 
 ### Computing thresholds for your own uncertainty map
 
