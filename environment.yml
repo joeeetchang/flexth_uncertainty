@@ -1,0 +1,13 @@
+# Conda alternative to `uv sync`. Tested versions are listed in README.md.
+name: flexth-uncertainty
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  - numpy>=2.4
+  - scipy>=1.17
+  - rasterio>=1.5
+  - astropy>=7.2
+  - matplotlib-base>=3.10
+  - imageio>=2.37
+  - py-opencv>=4.13

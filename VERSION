@@ -1,0 +1,5 @@
+FLEXTH
+
+1.2.1
+1.3.0  Includes the flood border subsampling option and optimizes the reading of input rasters
+1.3.0+uncertainty.1  Uncertainty-aware propagation gate (legacy and semantic modes)

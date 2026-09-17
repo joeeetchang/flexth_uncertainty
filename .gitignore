@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+
+# data and run outputs
+data/
+results/
+input/
+output/
+input_tiled/
+*.tif
+*.tiff
+*.aux.xml
+*.ovr
+*.gif
+
+# local configs (may contain private paths)
+configs/local*.json
+*.local.json

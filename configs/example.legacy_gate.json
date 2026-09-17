@@ -1,0 +1,43 @@
+{
+  "_comment": "Legacy gate: flood may propagate only into pixels with uncertainty < threshold. retention_curve values below were computed for the ML4Floods EDL model; compute your own for other uncertainty maps (see docs/UNCERTAINTY_GATE.md).",
+  "base_inputs": {
+    "flood": "data/my_event/flood.tif",
+    "dtm": "data/my_event/dtm.tif",
+    "uncertainty": "data/my_event/uncertainty.tif"
+  },
+  "retention_curve": {
+    "90": 0.3184199035167694,
+    "80": 0.14068011939525604,
+    "70": 0.08859623223543167,
+    "60": 0.06533036381006241
+  },
+  "base_params": {
+    "uncertainty_gate_mode": "legacy_low_uncertainty",
+    "param_output_map": "WL_WD",
+    "param_tiling": false,
+    "param_tile_inputs": true,
+    "param_tile_size": 10000,
+    "param_merge_tiles": true,
+    "param_threshold_slope": 0.1,
+    "param_size_gaps_close": 0.1,
+    "param_max_number_neighbors": 200,
+    "param_inverse_dist_exp": 1,
+    "param_border_subsampling": 0,
+    "param_min_flood_border_size": 10,
+    "param_border_quantile": 0.5,
+    "param_inner_quantile": 0.98,
+    "param_spread_outside_exclusion_mask": true,
+    "param_max_propagation_distance": 10,
+    "param_distance_range": 10,
+    "param_WD_star": 10,
+    "param_WL_estimation_method": "method_A",
+    "debug_uncertainty": false
+  },
+  "cases": [
+    {"uncertainty_on": 0, "uncertainty_level": 90},
+    {"uncertainty_on": 1, "uncertainty_level": 90},
+    {"uncertainty_on": 1, "uncertainty_level": 80},
+    {"uncertainty_on": 1, "uncertainty_level": 70},
+    {"uncertainty_on": 1, "uncertainty_level": 60}
+  ]
+}
